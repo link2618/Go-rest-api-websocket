@@ -26,3 +26,9 @@ go get golang.org/x/crypto/bcrypt
 
 Cors
 go get github.com/rs/cors
+
+Para verificar las dependencias que se estan usando y les quite el indirect para que sean instaladas
+go mod tidy
+
+Para instalar las dependencias
+go mod download
