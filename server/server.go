@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/link2618/go/rest-ws/database"
 	"github.com/link2618/go/rest-ws/repository"
+	"github.com/link2618/go/rest-ws/websocket"
+	"github.com/rs/cors"
 )
 
 type Config struct {
@@ -19,15 +21,21 @@ type Config struct {
 
 type Server interface {
 	Config() *Config
+	Hub() *websocket.Hub
 }
 
 type Broker struct {
 	config *Config
 	router *mux.Router
+	hub    *websocket.Hub
 }
 
 func (b *Broker) Config() *Config {
 	return b.config
+}
+
+func (b *Broker) Hub() *websocket.Hub {
+	return b.hub
 }
 
 // constructor
@@ -45,6 +53,7 @@ func NewServer(ctx context.Context, config *Config) (*Broker, error) {
 	broker := &Broker{
 		config: config,
 		router: mux.NewRouter(),
+		hub:    websocket.NewHub(),
 	}
 
 	return broker, nil
@@ -55,15 +64,20 @@ func (b *Broker) Start(binder func(s Server, r *mux.Router)) {
 	b.router = mux.NewRouter()
 	binder(b, b.router)
 
+	// handler := cors.Default().Handler(b.router)
+	handler := cors.AllowAll().Handler(b.router)
+
 	repo, err := database.NewPostgresRepository(b.config.DatabaseUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	go b.hub.Run()
 	repository.SetRepository(repo)
 
 	log.Println("Starting server port ", b.config.Port)
 
-	if err := http.ListenAndServe(b.config.Port, b.router); err != nil {
+	if err := http.ListenAndServe(b.config.Port, handler); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }

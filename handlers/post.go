@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
+	"github.com/link2618/go/rest-ws/events"
 	"github.com/link2618/go/rest-ws/models"
 	"github.com/link2618/go/rest-ws/repository"
 	"github.com/link2618/go/rest-ws/server"
@@ -64,6 +65,12 @@ func InsertPostHandler(s server.Server) http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+
+			var postMessage = models.WebsocketMessage{
+				Type:    events.POST_CREATED,
+				Payload: post,
+			}
+			s.Hub().Broadcast(postMessage, nil)
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)

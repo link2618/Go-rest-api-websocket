@@ -23,3 +23,6 @@ go get github.com/segmentio/ksuid
 
 Encriptar contraseñas
 go get golang.org/x/crypto/bcrypt
+
+Cors
+go get github.com/rs/cors
